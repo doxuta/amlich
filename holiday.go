@@ -73,7 +73,11 @@ var (
 // Lunar months 1..8 of lunar year Y fall in Gregorian year Y; month 12 dates
 // (Ông Táo) fall early in Gregorian year Y+1, so they are resolved from lunar
 // year year-1.
+// Years outside [MinYear, MaxYear] return nil.
 func Holidays(year int, c Country) []HolidayDate {
+	if year < MinYear || year > MaxYear {
+		return nil
+	}
 	defs := holidaysVN
 	if c == KR {
 		defs = holidaysKR
@@ -141,9 +145,30 @@ var divergenceAnchors = []struct {
 }
 
 // Divergence enumerates, over lunar years [fromYear, toYear], the shared
-// VN/KR observances whose civil dates differ because the same new moon falls
-// on different sides of midnight at UTC+7 versus UTC+9.
+// VN/KR observances whose civil dates differ between the two calendars.
+//
+// Both countries number the calendar from what has happened by LOCAL
+// midnight, so an astronomical instant landing in the two-hour gap between
+// midnight in Korea (UTC+9) and midnight in Vietnam (UTC+7) is counted on a
+// different civil day by each. That produces two quite different outcomes:
+//
+//   - A NEW MOON in the gap starts the month one day later in Korea, so the
+//     dates differ by one day. This is the common case.
+//   - A PRINCIPAL SOLAR TERM in the gap — above all the winter solstice, which
+//     anchors month 11 — instead shifts the month-11 anchor or the leap-month
+//     slot by a whole lunation. The two calendars then attach the same month
+//     NUMBER to different astronomical months and the dates land 29-30 days
+//     apart. Lunar year 1985 is the textbook case: Tết fell on 1985-01-21 in
+//     Vietnam while Seollal fell on 1985-02-20 in Korea.
+//
+// The range is clamped to [MinYear, MaxYear].
 func Divergence(fromYear, toYear int) []Divergent {
+	if fromYear < MinYear {
+		fromYear = MinYear
+	}
+	if toYear > MaxYear {
+		toYear = MaxYear
+	}
 	var out []Divergent
 	for ly := fromYear; ly <= toYear; ly++ {
 		for _, a := range divergenceAnchors {

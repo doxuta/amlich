@@ -38,7 +38,7 @@ func text(format string, a ...any) *mcp.CallToolResult {
 
 type convertArgs struct {
 	Direction string `json:"direction" jsonschema:"\"solar_to_lunar\" or \"lunar_to_solar\""`
-	Year      int    `json:"year" jsonschema:"year of the input date"`
+	Year      int    `json:"year" jsonschema:"year of the input date (1200-3000)"`
 	Month     int    `json:"month" jsonschema:"month of the input date (1-12)"`
 	Day       int    `json:"day" jsonschema:"day of the input date"`
 	Leap      bool   `json:"leap,omitempty" jsonschema:"for lunar_to_solar: the date is in the leap (intercalary) month"`
@@ -46,7 +46,7 @@ type convertArgs struct {
 }
 
 type yearArgs struct {
-	Year    int    `json:"year" jsonschema:"Gregorian year"`
+	Year    int    `json:"year" jsonschema:"Gregorian year (1200-3000)"`
 	Country string `json:"country,omitempty" jsonschema:"\"vn\" (default) or \"kr\""`
 }
 
@@ -55,8 +55,8 @@ type todayArgs struct {
 }
 
 type divergenceArgs struct {
-	FromYear int `json:"from_year" jsonschema:"first lunar year to check"`
-	ToYear   int `json:"to_year" jsonschema:"last lunar year to check"`
+	FromYear int `json:"from_year" jsonschema:"first lunar year to check (1200-3000)"`
+	ToYear   int `json:"to_year" jsonschema:"last lunar year to check (1200-3000)"`
 }
 
 func main() {

@@ -48,7 +48,7 @@ is provably wrong.
 
 The truncated series and the simple ΔT polynomial are good for roughly
 1200–3000 CE; outside that, errors in ΔT can shift a new moon across midnight
-and thus a month boundary by a day. Cross-validation coverage is 1900–2199.
+and thus a month boundary by a day. Cross-validation coverage is 1900–2199, and the exported API refuses years outside [1200, 3000] rather than returning an unreliable answer.
 Korean dates are computed by the same method at UTC+9; they match the KST
 convention used for Seollal/Chuseok, but this library is not an official
 KASI almanac.

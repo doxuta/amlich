@@ -22,6 +22,7 @@ so a new moon between 23:00 ICT and 01:00 KST starts the month on different
 civil days. Ask an LLM without a tool and it will happily hallucinate these
 dates; give it this MCP server and it computes them from planetary motion.
 
+- **Supported window: 1200–3000 CE.** Outside it the truncated series stops being monotonic in the lunation index, so the exported functions return an error instead of an unreliable answer (they used to loop forever — found by widening the fuzz range).
 - **Zero dependencies** in the engine (`import "github.com/doxuta/amlich"` pulls only the standard library)
 - **Cross-validated**: 59,810 golden conversions + 1,732 astronomy samples against the implementation running in production inside [TEdu](https://github.com/doxuta/tedu), 1900–2199, both zones
 - **Fuzzed**: native round-trip fuzz target, 38.9M executions clean; the inputs that broke earlier revisions live in `testdata/fuzz` as a regression corpus
