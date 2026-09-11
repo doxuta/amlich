@@ -107,3 +107,49 @@ func TestDivergenceDocumentedExampleHolds(t *testing.T) {
 		t.Fatalf("1985 Tết/Seollal = VN %s / KR %s, documented as VN 1985-01-21 / KR 1985-02-20", tet.VN, tet.KR)
 	}
 }
+
+// The supported window is a window of CIVIL years: SolarToLunar accepts every
+// civil day of MinYear, so — per the invariant stated on FuzzRoundTrip — every
+// one of them must convert back. Civil January of MinYear belongs to lunar year
+// MinYear-1, which the lunar-year gate used to refuse outright.
+func TestWindowStartCivilDaysRoundTrip(t *testing.T) {
+	for _, z := range []Zone{Vietnam, China, Korea} {
+		for day := 1; day <= 31; day++ {
+			l, err := SolarToLunar(MinYear, 1, day, z)
+			if err != nil {
+				t.Fatalf("SolarToLunar(%d-01-%02d, tz=%v) = %v", MinYear, day, z, err)
+			}
+			yy, mm, dd, err := LunarToSolar(l, z)
+			if err != nil {
+				t.Errorf("round trip %d-01-%02d tz=%v: SolarToLunar gave %v, LunarToSolar rejected it: %v",
+					MinYear, day, z, l, err)
+				continue
+			}
+			if yy != MinYear || mm != 1 || dd != day {
+				t.Errorf("round trip %d-01-%02d tz=%v: got %04d-%02d-%02d", MinYear, day, z, yy, mm, dd)
+			}
+		}
+	}
+}
+
+// Ông Táo (lunar 23/12) of lunar year 1199 falls on 1200-01-10, inside the
+// supported window, so Holidays(1200, VN) must list it: the doc promises the
+// holidays that fall inside the Gregorian year, and 1200 is in window.
+func TestHolidaysCompleteAtWindowStart(t *testing.T) {
+	if l, err := SolarToLunar(MinYear, 1, 10, Vietnam); err != nil || l.Day != 23 || l.Month != 12 {
+		t.Fatalf("precondition: SolarToLunar(%d-01-10) = %v, %v", MinYear, l, err)
+	}
+	got := Holidays(MinYear, VN)
+	if len(got) != len(holidaysVN) {
+		t.Errorf("Holidays(%d, VN) returned %d of %d holidays", MinYear, len(got), len(holidaysVN))
+	}
+	for _, h := range got {
+		if h.NameEN == "Kitchen Gods' Day" {
+			if h.ISO() != "1200-01-10" {
+				t.Errorf("Kitchen Gods' Day %d = %s, want 1200-01-10", MinYear, h.ISO())
+			}
+			return
+		}
+	}
+	t.Errorf("Holidays(%d, VN) is missing \"Kitchen Gods' Day\", which falls on 1200-01-10", MinYear)
+}

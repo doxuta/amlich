@@ -54,9 +54,12 @@ const (
 // polynomial switches to a quartic branch around 800 CE that diverges on the
 // negative side, and MinYear keeps a ~400-year margin from it.
 //
-// Every exported entry point rejects years outside this window with
+// Every exported entry point rejects dates outside this window with
 // ErrInvalidSolarDate or ErrInvalidLunarDate (Holidays returns nil,
 // Divergence clamps its range) rather than computing an unreliable answer.
+// The window bounds the CIVIL year, so at the MinYear end LunarToSolar gates
+// on the civil date it computes rather than on the lunar year it is given.
+// The two ends are not symmetric; see its doc for why.
 //
 // Note that civil dates before the Gregorian reform of 1582-10-15 are
 // interpreted in the Julian calendar, matching the reference implementation.
@@ -142,10 +145,19 @@ func SolarToLunar(year, month, day int, z Zone) (LunarDate, error) {
 // LunarToSolar converts a lunisolar date (as numbered in zone z) to the civil
 // (Gregorian) date it falls on. Unlike the reference implementation, it
 // validates month length: day 30 of a 29-day month is ErrInvalidLunarDate
-// instead of silently overflowing into the next month. Years outside
-// [MinYear, MaxYear] return ErrInvalidLunarDate.
+// instead of silently overflowing into the next month.
+//
+// The window is a window of CIVIL years, so the gate is on the result, not on
+// l.Year: a date whose civil date falls before MinYear returns
+// ErrInvalidLunarDate. Lunar year MinYear-1 is therefore accepted for its
+// months 11 and 12, which fall in civil MinYear — those are exactly the dates
+// SolarToLunar returns for the first civil days of MinYear, and refusing them
+// broke the round trip. There is no matching case at the other end: lunar
+// month 1 never starts in late December, so SolarToLunar never emits lunar
+// year MaxYear+1, and lunar year MaxYear's months 11 and 12 (civil MaxYear+1)
+// stay computable.
 func LunarToSolar(l LunarDate, z Zone) (year, month, day int, err error) {
-	if l.Year < MinYear || l.Year > MaxYear ||
+	if l.Year < MinYear-1 || l.Year > MaxYear ||
 		l.Month < 1 || l.Month > 12 || l.Day < 1 || l.Day > 30 {
 		return 0, 0, 0, ErrInvalidLunarDate
 	}
@@ -187,6 +199,9 @@ func LunarToSolar(l LunarDate, z Zone) (year, month, day int, err error) {
 		return 0, 0, 0, ErrInvalidLunarDate
 	}
 	day, month, year = jdToDate(start + l.Day - 1)
+	if year < MinYear {
+		return 0, 0, 0, ErrInvalidLunarDate
+	}
 	return year, month, day, nil
 }
 
