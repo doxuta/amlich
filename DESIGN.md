@@ -15,7 +15,7 @@ Original to this library:
 
 1. **Dual-zone model and the `Divergence` API.** The same astronomical events
    are numbered against different civil clocks: Vietnam (UTC+7) and Korea
-   (UTC+9). When a new moon falls between 23:00 ICT and 01:00 KST, the two
+   (UTC+9). When a new moon falls between 22:00 and 24:00 ICT (00:00–02:00 KST), the two
    national calendars begin the month a day apart — so Tết 2027 is Feb 6 in
    Vietnam while Seollal 2027 is Feb 7 in Korea. `Divergence` enumerates every
    such year computationally instead of citing folklore.

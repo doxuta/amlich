@@ -12,14 +12,17 @@ celebrate the "same" lunar holiday on different days?**
 
 ```
 $ amlich divergence 2026 2031
-năm âm 2027, ngày 1/1: VN 2027-02-06 ≠ KR 2027-02-07 (Tết Nguyên Đán / 설날)
-năm âm 2028, ngày 1/1: VN 2028-01-26 ≠ KR 2028-01-27 (Tết Nguyên Đán / 설날)
-năm âm 2030, ngày 1/1: VN 2030-02-02 ≠ KR 2030-02-03 (Tết Nguyên Đán / 설날)
+năm âm 2027, ngày 1/1: VN 2027-02-06 ≠ KR 2027-02-07 (Tết Nguyên Đán / 설날 (Seollal))
+năm âm 2027, ngày 15/1: VN 2027-02-20 ≠ KR 2027-02-21 (Rằm tháng Giêng / 정월대보름 (Daeboreum))
+năm âm 2028, ngày 1/1: VN 2028-01-26 ≠ KR 2028-01-27 (Tết Nguyên Đán / 설날 (Seollal))
+năm âm 2028, ngày 15/1: VN 2028-02-09 ≠ KR 2028-02-10 (Rằm tháng Giêng / 정월대보름 (Daeboreum))
+năm âm 2030, ngày 1/1: VN 2030-02-02 ≠ KR 2030-02-03 (Tết Nguyên Đán / 설날 (Seollal))
+năm âm 2030, ngày 15/1: VN 2030-02-16 ≠ KR 2030-02-17 (Rằm tháng Giêng / 정월대보름 (Daeboreum))
 ```
 
 Same new moon — but Vietnam numbers its calendar at UTC+7 and Korea at UTC+9,
-so a new moon between 23:00 ICT and 01:00 KST starts the month on different
-civil days. Ask an LLM without a tool and it will happily hallucinate these
+so a new moon between 22:00 and 24:00 ICT (00:00–02:00 KST) starts the month
+on different civil days. Ask an LLM without a tool and it will happily hallucinate these
 dates; give it this MCP server and it computes them from planetary motion.
 
 - **Supported window: 1200–3000 CE.** Outside it the truncated series stops being monotonic in the lunation index, so the exported functions return an error instead of an unreliable answer (they used to loop forever — found by widening the fuzz range).

@@ -33,10 +33,10 @@ type Holiday struct {
 // HolidayDate is a holiday resolved to a civil date for a specific year.
 type HolidayDate struct {
 	Holiday
-	Year         int // Gregorian year the holiday falls in
-	SolarY       int
-	SolarM       int
-	SolarD       int
+	Year   int // Gregorian year the holiday falls in
+	SolarY int
+	SolarM int
+	SolarD int
 }
 
 // ISO renders the resolved civil date as YYYY-MM-DD.

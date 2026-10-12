@@ -14,10 +14,10 @@ import "math"
 // cross-validated against (testdata/golden_*.txt).
 
 const (
-	jdEpoch1900   = 2415021.076998695 // JD of the 1900 lunation epoch
-	synodicMonth  = 29.530588853      // mean synodic month length in days
-	gregorianJD   = 2299161           // first JD of the Gregorian calendar
-	radPerDeg     = math.Pi / 180
+	jdEpoch1900  = 2415021.076998695 // JD of the 1900 lunation epoch
+	synodicMonth = 29.530588853      // mean synodic month length in days
+	gregorianJD  = 2299161           // first JD of the Gregorian calendar
+	radPerDeg    = math.Pi / 180
 )
 
 func fl(x float64) int { return int(math.Floor(x)) }
