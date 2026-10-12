@@ -118,6 +118,11 @@ func main() {
 		if err != nil {
 			return nil, nil, err
 		}
+		// Holidays returns nil outside the window; an empty success would read
+		// as "no holidays that year", so refuse explicitly.
+		if a.Year < amlich.MinYear || a.Year > amlich.MaxYear {
+			return nil, nil, fmt.Errorf("year %d is outside the supported window %d-%d", a.Year, amlich.MinYear, amlich.MaxYear)
+		}
 		var b strings.Builder
 		for _, h := range amlich.Holidays(a.Year, c) {
 			fmt.Fprintf(&b, "%s  %s (%s) — lunar %d/%d\n", h.ISO(), h.Name, h.NameEN, h.Day, h.Month)
@@ -129,6 +134,12 @@ func main() {
 		Name:        "vn_kr_divergence",
 		Description: "Years in which the Vietnamese (UTC+7) and Korean (UTC+9) lunisolar calendars place a shared observance (Lunar New Year, Mid-Autumn/Chuseok, Dano, Daeboreum) on different civil dates.",
 	}, func(ctx context.Context, req *mcp.CallToolRequest, a divergenceArgs) (*mcp.CallToolResult, any, error) {
+		// Divergence clamps to the window, so a range with no supported year
+		// is empty — reporting that as "no divergence" would be a false claim.
+		if a.FromYear > a.ToYear || a.ToYear < amlich.MinYear || a.FromYear > amlich.MaxYear {
+			return nil, nil, fmt.Errorf("lunar years %d-%d contain no supported year (window %d-%d, from_year <= to_year)",
+				a.FromYear, a.ToYear, amlich.MinYear, amlich.MaxYear)
+		}
 		div := amlich.Divergence(a.FromYear, a.ToYear)
 		if len(div) == 0 {
 			return text("No VN/KR divergence in lunar years %d-%d.", a.FromYear, a.ToYear), nil, nil

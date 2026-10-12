@@ -54,6 +54,11 @@ func main() {
 	case "holidays":
 		need(args, 2)
 		year := atoi(args[1])
+		// Holidays returns nil outside the window; exit 0 with no output
+		// would read as "no holidays that year".
+		if year < amlich.MinYear || year > amlich.MaxYear {
+			die(fmt.Errorf("year %d is outside the supported window %d-%d", year, amlich.MinYear, amlich.MaxYear))
+		}
 		for _, h := range amlich.Holidays(year, c) {
 			fmt.Printf("%s  %-22s %s (âm %d/%d)\n", h.ISO(), h.Name, h.NameEN, h.Day, h.Month)
 		}
@@ -65,7 +70,13 @@ func main() {
 
 	case "divergence":
 		need(args, 3)
-		for _, d := range amlich.Divergence(atoi(args[1]), atoi(args[2])) {
+		from, to := atoi(args[1]), atoi(args[2])
+		// Divergence clamps to the window; a range with no supported year is
+		// empty and must not look like "no divergence".
+		if from > to || to < amlich.MinYear || from > amlich.MaxYear {
+			die(fmt.Errorf("lunar years %d-%d contain no supported year (window %d-%d, FROM_YEAR <= TO_YEAR)", from, to, amlich.MinYear, amlich.MaxYear))
+		}
+		for _, d := range amlich.Divergence(from, to) {
 			fmt.Printf("năm âm %d, ngày %d/%d: VN %s ≠ KR %s (%s / %s)\n",
 				d.LunarYear, d.LunarDay, d.LunarMonth, d.VN, d.KR, d.NameVN, d.NameKR)
 		}
