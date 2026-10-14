@@ -142,24 +142,13 @@ func SolarToLunar(year, month, day int, z Zone) (LunarDate, error) {
 	return LunarDate{Year: lunarYear, Month: lunarMonth, Day: lunarDay, Leap: lunarLeap}, nil
 }
 
-// LunarToSolar converts a lunisolar date (as numbered in zone z) to the civil
-// (Gregorian) date it falls on. Unlike the reference implementation, it
-// validates month length: day 30 of a 29-day month is ErrInvalidLunarDate
-// instead of silently overflowing into the next month.
-//
-// The window is a window of CIVIL years, so the gate is on the result, not on
-// l.Year: a date whose civil date falls before MinYear returns
-// ErrInvalidLunarDate. Lunar year MinYear-1 is therefore accepted for its
-// months 11 and 12, which fall in civil MinYear — those are exactly the dates
-// SolarToLunar returns for the first civil days of MinYear, and refusing them
-// broke the round trip. There is no matching case at the other end: lunar
-// month 1 never starts in late December, so SolarToLunar never emits lunar
-// year MaxYear+1, and lunar year MaxYear's months 11 and 12 (civil MaxYear+1)
-// stay computable.
-func LunarToSolar(l LunarDate, z Zone) (year, month, day int, err error) {
-	if l.Year < MinYear-1 || l.Year > MaxYear ||
-		l.Month < 1 || l.Month > 12 || l.Day < 1 || l.Day > 30 {
-		return 0, 0, 0, ErrInvalidLunarDate
+// lunarMonthStart validates the year, month and leap flag of l (Day is
+// ignored) and returns the Julian day its month starts on and the month's
+// length. It does not gate on the civil window: LunarToSolar gates on the
+// resulting day and MonthDays on the month, so each applies its own rule.
+func lunarMonthStart(l LunarDate, z Zone) (start, length int, err error) {
+	if l.Year < MinYear-1 || l.Year > MaxYear || l.Month < 1 || l.Month > 12 {
+		return 0, 0, ErrInvalidLunarDate
 	}
 	tz := float64(z)
 	var a11, b11 int
@@ -187,15 +176,34 @@ func LunarToSolar(l LunarDate, z Zone) (year, month, day int, err error) {
 			leapM = 12
 		}
 		if l.Leap && l.Month != leapM {
-			return 0, 0, 0, ErrInvalidLunarDate
+			return 0, 0, ErrInvalidLunarDate
 		} else if l.Leap || off >= leapOff {
 			off++
 		}
 	} else if l.Leap {
-		return 0, 0, 0, ErrInvalidLunarDate
+		return 0, 0, ErrInvalidLunarDate
 	}
-	start := newMoonDay(k+off, tz)
-	if l.Day > start2Len(start, k+off, tz) {
+	start = newMoonDay(k+off, tz)
+	return start, start2Len(start, k+off, tz), nil
+}
+
+// LunarToSolar converts a lunisolar date (as numbered in zone z) to the civil
+// (Gregorian) date it falls on. Unlike the reference implementation, it
+// validates month length: day 30 of a 29-day month is ErrInvalidLunarDate
+// instead of silently overflowing into the next month.
+//
+// The window is a window of CIVIL years, so the gate is on the result, not on
+// l.Year: a date whose civil date falls before MinYear returns
+// ErrInvalidLunarDate. Lunar year MinYear-1 is therefore accepted for its
+// months 11 and 12, which fall in civil MinYear — those are exactly the dates
+// SolarToLunar returns for the first civil days of MinYear, and refusing them
+// broke the round trip. There is no matching case at the other end: lunar
+// month 1 never starts in late December, so SolarToLunar never emits lunar
+// year MaxYear+1, and lunar year MaxYear's months 11 and 12 (civil MaxYear+1)
+// stay computable.
+func LunarToSolar(l LunarDate, z Zone) (year, month, day int, err error) {
+	start, n, err := lunarMonthStart(l, z)
+	if err != nil || l.Day < 1 || l.Day > n {
 		return 0, 0, 0, ErrInvalidLunarDate
 	}
 	day, month, year = jdToDate(start + l.Day - 1)
@@ -206,21 +214,19 @@ func LunarToSolar(l LunarDate, z Zone) (year, month, day int, err error) {
 }
 
 // MonthDays reports the length (29 or 30 days) of the given lunar month as
-// numbered in zone z. The Day field of l is ignored. Years outside
-// [MinYear, MaxYear] return ErrInvalidLunarDate.
+// numbered in zone z. The Day field of l is ignored. A month with no day
+// inside the civil window returns ErrInvalidLunarDate; the month that
+// straddles MinYear-01-01 (12/1199, which SolarToLunar emits for the first
+// civil days of MinYear) is computable like any other.
 func MonthDays(l LunarDate, z Zone) (int, error) {
-	probe := l
-	probe.Day = 1
-	y, m, d, err := LunarToSolar(probe, z)
+	start, n, err := lunarMonthStart(l, z)
 	if err != nil {
 		return 0, err
 	}
-	start := jdFromDate(d, m, y)
-	k, ok := lunationAt(start, float64(z))
-	if !ok {
+	if _, _, y := jdToDate(start + n - 1); y < MinYear {
 		return 0, ErrInvalidLunarDate
 	}
-	return start2Len(start, k, float64(z)), nil
+	return n, nil
 }
 
 // maxLunationSteps caps each correction loop in lunationAt. Across the whole

@@ -89,18 +89,13 @@ func Holidays(year int, c Country) []HolidayDate {
 		if h.Month >= 12 {
 			ly = year - 1
 		}
+		// Months 1–8 of lunar year Y fall in civil Y, and 23/12 of Y-1 ends a
+		// week before Tết (never before 21 January), so y == year for every
+		// year in the window; TestRegress20261014_HolidaysResolveEveryDefinitionEveryYear
+		// pins that. The guard stays as the cheap defence it is.
 		y, m, d, err := LunarToSolar(LunarDate{Year: ly, Month: h.Month, Day: h.Day}, z)
-		if err != nil {
+		if err != nil || y != year {
 			continue
-		}
-		if y != year {
-			// Rare drift across the Gregorian boundary — retry adjacent year.
-			y2, m2, d2, err2 := LunarToSolar(LunarDate{Year: ly - 1, Month: h.Month, Day: h.Day}, z)
-			if err2 == nil && y2 == year {
-				y, m, d = y2, m2, d2
-			} else {
-				continue
-			}
 		}
 		out = append(out, HolidayDate{Holiday: h, Year: year, SolarY: y, SolarM: m, SolarD: d})
 	}

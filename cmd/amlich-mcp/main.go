@@ -73,6 +73,11 @@ func main() {
 		z := c.Zone()
 		switch a.Direction {
 		case "solar_to_lunar":
+			if a.Leap {
+				// The flag has no meaning here; ignoring it silently let an
+				// agent believe it had been applied.
+				return nil, nil, fmt.Errorf("leap applies to lunar_to_solar only; solar_to_lunar reports the leap month the date falls in")
+			}
 			l, err := amlich.SolarToLunar(a.Year, a.Month, a.Day, z)
 			if err != nil {
 				return nil, nil, err

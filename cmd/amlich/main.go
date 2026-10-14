@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/doxuta/amlich"
@@ -46,6 +47,9 @@ func main() {
 		need(args, 2)
 		t, err := time.Parse("2006-01-02", args[1])
 		die(err)
+		// A well-formed date outside the window is unsupported, not
+		// "invalid"; say which.
+		die(windowErr(t.Year()))
 		l, err := amlich.SolarToLunar(t.Year(), int(t.Month()), t.Day(), c.Zone())
 		die(err)
 		cc := amlich.CanChi(l.Year)
@@ -56,9 +60,7 @@ func main() {
 		year := atoi(args[1])
 		// Holidays returns nil outside the window; exit 0 with no output
 		// would read as "no holidays that year".
-		if year < amlich.MinYear || year > amlich.MaxYear {
-			die(fmt.Errorf("year %d is outside the supported window %d-%d", year, amlich.MinYear, amlich.MaxYear))
-		}
+		die(windowErr(year))
 		for _, h := range amlich.Holidays(year, c) {
 			fmt.Printf("%s  %-22s %s (âm %d/%d)\n", h.ISO(), h.Name, h.NameEN, h.Day, h.Month)
 		}
@@ -108,9 +110,19 @@ func atoi(s string) int {
 	return n
 }
 
+// windowErr is the error for a civil year the engine does not cover, nil
+// otherwise.
+func windowErr(year int) error {
+	if year < amlich.MinYear || year > amlich.MaxYear {
+		return fmt.Errorf("year %d is outside the supported window %d-%d", year, amlich.MinYear, amlich.MaxYear)
+	}
+	return nil
+}
+
 func die(err error) {
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "amlich:", err)
+		// The package's sentinel errors already carry the prefix.
+		fmt.Fprintln(os.Stderr, "amlich: "+strings.TrimPrefix(err.Error(), "amlich: "))
 		os.Exit(1)
 	}
 }
